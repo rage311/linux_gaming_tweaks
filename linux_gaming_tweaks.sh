@@ -36,7 +36,14 @@ X_META_MODE_NORMAL='DVI-D-0: 1920x1080_60.00 +0+0 { ForceFullCompositionPipeline
 function set_accel() {
   while read -r line; do
     MOUSE_ID=$(echo "$line" | perl -ne 'print $1 if /.+id=(\d+)/')
-    xinput set-prop "$MOUSE_ID" 'Device Accel Profile' "$1"
+    if ( xinput list-props "$MOUSE_ID" | grep -q 'Device Accel Profile' ); then
+      xinput set-prop "$MOUSE_ID" 'Device Accel Profile' "$1"
+    # Different name in Xorg 1.19/libinput/xf86-input-libinput
+    elif ( xinput list-props "$MOUSE_ID" | grep -q 'libinput Accel Speed' ); then
+      xinput set-prop "$MOUSE_ID" 'libinput Accel Speed' "$1"
+    else
+      echo "Unable to set acceleration for MOUSE_ID: $MOUSE_ID" >>"$LOG_FILE"
+    fi
   done < <(xinput | egrep "${MOUSE_STRING}.+pointer")
 }
 
